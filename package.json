@@ -1,0 +1,43 @@
+{
+  "name": "dm-animate3d-api",
+  "version": "1.0.0",
+  "description": "JavaScript/TypeScript SDK for the Animate 3D REST API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": [
+    "deepmotion",
+    "animate3d",
+    "api",
+    "sdk",
+    "javascript",
+    "typescript"
+  ],
+  "author": "DeepMotion",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.11",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "axios": "^1.14.0",
+    "dm-animate3d-api": "file:dm-animate3d-api-1.0.0.tgz",
+    "dotenv": "^17.3.1"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepmotion/dm-animate3d-api-js-sdk.git"
+  }
+}
