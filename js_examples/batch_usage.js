@@ -1,6 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({
+  path: require('path').resolve(__dirname, '.env'),
+  quiet: true,
+});
 
+const { existsSync } = require('fs');
 const { Animate3DClient, ProcessParams } = require('dm-animate3d-api');
+const { video: sampleVideo } = require('./paths');
 
 const API_SERVER_URL = process.env.DM_A3D_API_SERVER_URL || 'https://service.deepmotion.com';
 const CLIENT_ID = process.env.DM_A3D_CLIENT_ID;
@@ -46,7 +51,7 @@ async function main() {
     }
     const model_id = all_models[0].id;
 
-    const video_files = ['video.mp4'];
+    const video_files = [sampleVideo];
     const params = new ProcessParams({
       formats: ['bvh', 'fbx'],
       model_id: model_id
@@ -55,7 +60,7 @@ async function main() {
     console.log('=== Submitting jobs ===');
     const rids = [];
     for (const video of video_files) {
-      if (!require('fs').existsSync(video)) {
+      if (!existsSync(video)) {
         console.log(`Skipping ${video} (file not found)`);
         continue;
       }
@@ -82,7 +87,7 @@ async function main() {
     await client.close();
 
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error:', error instanceof Error ? error.message : error);
   }
 }
 

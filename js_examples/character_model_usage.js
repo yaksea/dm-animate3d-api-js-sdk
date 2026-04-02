@@ -1,6 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({
+  path: require('path').resolve(__dirname, '.env'),
+  quiet: true,
+});
 
+const { existsSync } = require('fs');
 const { Animate3DClient } = require('dm-animate3d-api');
+const { testCharacterGlb: GLB_PATH } = require('./paths');
 
 const API_SERVER_URL = process.env.DM_A3D_API_SERVER_URL || 'https://service.deepmotion.com';
 const CLIENT_ID = process.env.DM_A3D_CLIENT_ID;
@@ -14,6 +19,11 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 
 async function main() {
   try {
+    if (!existsSync(GLB_PATH)) {
+      console.error(`GLB not found: ${GLB_PATH}`);
+      process.exit(1);
+    }
+
     const client = new Animate3DClient(
       API_SERVER_URL,
       CLIENT_ID,
@@ -27,19 +37,15 @@ async function main() {
       console.log(`  ${model.name} (ID: ${model.id}, Platform: ${model.platform})`);
     });
 
-    console.log('\n=== Uploading Custom Model ===');
-    const model_id = await client.upload_character_model(
-      './test_character.glb',
-      'My Custom Character'
-    );
+    console.log('=== Uploading Custom Model ===');
+    const model_id = await client.upload_character_model(GLB_PATH, 'My Custom Character');
     console.log(`Uploaded model ID: ${model_id}`);
 
-    console.log('\n=== Deleting Model ===');
+    console.log('=== Deleting Model ===');
     const deleted_count = await client.delete_character_model(model_id);
     console.log(`Deleted ${deleted_count} model(s)`);
 
     if (all_models.length > 0) {
-      console.log('\n=== Get Specific Model ===');
       const first_model_id = all_models[0].id;
       const specific_models = await client.list_character_models(first_model_id);
       if (specific_models.length > 0) {
@@ -59,7 +65,8 @@ async function main() {
     await client.close();
 
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error:', error instanceof Error ? error.message : error);
+    process.exit(1);
   }
 }
 

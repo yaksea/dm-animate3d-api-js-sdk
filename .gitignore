@@ -1,3 +1,4 @@
 /node_modules/
-/examples/output/
+/js_examples/output/
+/ts_examples/output/
 /dist/

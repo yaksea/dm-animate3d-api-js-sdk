@@ -1,6 +1,11 @@
-require('dotenv').config();
+require('dotenv').config({
+  path: require('path').resolve(__dirname, '.env'),
+  quiet: true,
+});
 
+const { existsSync } = require('fs');
 const { Animate3DClient, ProcessParams, Status } = require('dm-animate3d-api');
+const { multiPersonVideo: VIDEO_PATH } = require('./paths');
 
 const API_SERVER_URL = process.env.DM_A3D_API_SERVER_URL || 'https://service.deepmotion.com';
 const CLIENT_ID = process.env.DM_A3D_CLIENT_ID;
@@ -12,7 +17,6 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
   process.exit(1);
 }
 
-const VIDEO_PATH = 'multi_person.mp4';
 const OUTPUT_DIR = './output/multi_person';
 
 const client = new Animate3DClient(
@@ -41,6 +45,11 @@ async function on_result(data) {
 
 async function main() {
   try {
+    if (!existsSync(VIDEO_PATH)) {
+      console.error(`Video not found: ${VIDEO_PATH}`);
+      process.exit(1);
+    }
+
     console.log('Step 1: Detecting persons...');
     const detection_rid = await client.prepare_multi_person_job(VIDEO_PATH);
 
@@ -76,7 +85,7 @@ async function main() {
     await client.close();
 
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error:', error instanceof Error ? error.message : error);
   }
 }
 

@@ -1,4 +1,6 @@
 import * as fs from 'fs';
+import * as http from 'http';
+import * as https from 'https';
 import * as path from 'path';
 import axios from 'axios';
 import { ProcessParams } from './data/params';
@@ -22,6 +24,8 @@ export class Animate3DClient {
   private timeout?: number;
   private _authenticated: boolean = false;
   private _cookies: Record<string, string> = {};
+  private readonly _httpAgent = new http.Agent({ keepAlive: true });
+  private readonly _httpsAgent = new https.Agent({ keepAlive: true });
 
   constructor(
     api_server_url: string,
@@ -36,7 +40,10 @@ export class Animate3DClient {
   }
 
   private _get_axios_config() {
-    const config: any = {};
+    const config: any = {
+      httpAgent: this._httpAgent,
+      httpsAgent: this._httpsAgent,
+    };
     if (this.timeout) {
       config.timeout = this.timeout * 1000;
     }
@@ -299,28 +306,52 @@ export class Animate3DClient {
     const params = {
       name,
       modelExt: model_ext,
-      resumable: '0'
+      resumable: '1'
     };
 
     return await this._request('GET', '/character/getModelUploadUrl', params);
   }
 
+  /** GCS resumable: POST `x-goog-resumable: start` → PUT body to `Location`. */
   private async _upload_file_to_gcs(gcs_url: string, file_path: string): Promise<void> {
     const file_data = fs.readFileSync(file_path);
 
-    const headers = {
-      'Content-Length': String(file_data.length),
-      'Content-Type': 'application/octet-stream'
-    };
-
     try {
-      await axios.put(gcs_url, file_data, {
-        headers,
+      const init = await axios.post(gcs_url, null, {
+        headers: { 'x-goog-resumable': 'start', 'Content-Length': '0' },
+        transformRequest: [(data, headers) => {
+          (headers as any)?.delete?.('Content-Type');
+          return data;
+        }],
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        ...this._get_axios_config()
+      });
+
+      const loc = init.headers['location'];
+      const session_url = Array.isArray(loc) ? loc[0] : loc;
+      if (!session_url) {
+        throw new APIError('GCS resumable init: missing Location header');
+      }
+
+      await axios.put(session_url, file_data, {
+        headers: {
+          'Content-Length': String(file_data.length),
+          'Content-Type': 'application/octet-stream'
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
         ...this._get_axios_config()
       });
     } catch (error: any) {
+      if (error instanceof APIError) throw error;
       if (isAxiosError(error)) {
-        throw new APIError(`Upload failed: ${error.message}`);
+        const detail = error.response?.data
+          ? typeof error.response.data === 'string'
+            ? error.response.data
+            : JSON.stringify(error.response.data)
+          : error.message;
+        throw new APIError(`Upload failed: ${detail}`);
       }
       throw new APIError(`Upload failed: ${error.message}`);
     }
@@ -694,7 +725,8 @@ export class Animate3DClient {
   }
 
   async close(): Promise<void> {
-    // No resources to close in this implementation
+    this._httpAgent.destroy();
+    this._httpsAgent.destroy();
   }
 }
 

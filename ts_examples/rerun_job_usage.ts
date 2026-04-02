@@ -1,8 +1,11 @@
-require('dotenv').config();
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { Animate3DClient, ProcessParams } from '../src';
+import type { ProgressCallback, ResultCallback } from '../src';
 
-const { Animate3DClient, ProcessParams } = require('dm-animate3d-api');
+config({ path: resolve(__dirname, '.env'), quiet: true });
 
-const API_SERVER_URL = process.env.DM_A3D_API_SERVER_URL || 'https://service.deepmotion.com';
+const API_SERVER_URL = process.env.DM_A3D_API_SERVER_URL ?? 'https://service.deepmotion.com';
 const CLIENT_ID = process.env.DM_A3D_CLIENT_ID;
 const CLIENT_SECRET = process.env.DM_A3D_CLIENT_SECRET;
 
@@ -12,23 +15,17 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
   process.exit(1);
 }
 
-const OUTPUT_DIR = './output/rerun';
+const client = new Animate3DClient(API_SERVER_URL, CLIENT_ID, CLIENT_SECRET);
 
-const client = new Animate3DClient(
-  API_SERVER_URL,
-  CLIENT_ID,
-  CLIENT_SECRET
-);
-
-function on_progress(data) {
+const onProgress: ProgressCallback = (data) => {
   if (data.position_in_queue) {
     console.log(`Position in queue: ${data.position_in_queue})`);
   } else {
     console.log(`Progress: ${data.progress_percent}%`);
   }
-}
+};
 
-function on_result(data) {
+const onResult: ResultCallback = (data) => {
   if (data.result) {
     console.log('Job completed successfully!');
     if (data.result.output) {
@@ -37,9 +34,9 @@ function on_result(data) {
   } else if (data.error) {
     console.error(`Job failed: ${data.error.message} (Code: ${data.error.code})`);
   }
-}
+};
 
-async function main() {
+async function main(): Promise<void> {
   try {
     const jobs = await client.list_jobs();
     if (jobs.length === 0) {
@@ -59,30 +56,23 @@ async function main() {
     }
     const model_id = all_models[0].id;
     const new_params = new ProcessParams({
-      model_id: model_id,
+      model_id,
       formats: ['fbx', 'glb'],
-      track_face: 1
+      track_face: 1,
     });
 
     try {
-      const new_rid = await client.rerun_job(
-        rid,
-        new_params,
-        on_result,
-        on_progress
-      );
+      const new_rid = await client.rerun_job(rid, new_params, onResult, onProgress);
       console.log(`Job finished, RID: ${new_rid}`);
-
-    } catch (error) {
-      console.error(`Error rerunning job: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(`Error rerunning job: ${error instanceof Error ? error.message : error}`);
       console.error('Note: This example requires a valid RID from a previous job.');
     }
 
     await client.close();
-
-  } catch (error) {
-    console.error('Error:', error.message);
+  } catch (error: unknown) {
+    console.error('Error:', error instanceof Error ? error.message : error);
   }
 }
 
-main();
+void main();
