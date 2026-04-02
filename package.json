@@ -25,11 +25,11 @@
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "dm-animate3d-api": "file:dm-animate3d-api-1.0.0.tgz"
   },
   "dependencies": {
     "axios": "^1.14.0",
-    "dm-animate3d-api": "file:dm-animate3d-api-1.0.0.tgz",
     "dotenv": "^17.3.1"
   },
   "files": [
@@ -39,6 +39,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/deepmotion/dm-animate3d-api-js-sdk.git"
+    "url": "https://github.com/yaksea/dm-animate3d-api-js-sdk.git"
   }
 }
