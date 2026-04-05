@@ -4,6 +4,7 @@
 # On npmjs.com: package Settings -> Trusted publisher: bind GitHub org/user, repo,
 #   workflow filename (must match this file, e.g. workflow.yml), optional Environment matching the job (e.g. release).
 # For private packages during install only, use a read-only token and set NODE_AUTH_TOKEN on the Install step if needed.
+# Prerelease semver (e.g. 1.0.0-rc.1) requires an explicit dist-tag; the publish step uses --tag rc for those.
 
 name: Publish to npm
 
@@ -51,4 +52,9 @@ jobs:
         run: npm test -- --passWithNoTests
 
       - name: Publish to npm
-        run: npx --yes npm@11.5.1 publish
+        run: |
+          if node -e 'const v=require("./package.json").version; process.exit(/^\d+\.\d+\.\d+-.+/.test(v)?0:1)'; then
+            npx --yes npm@11.5.1 publish --tag rc
+          else
+            npx --yes npm@11.5.1 publish
+          fi
