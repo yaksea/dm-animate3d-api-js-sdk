@@ -1,6 +1,6 @@
 {
   "name": "dm-animate3d-api",
-  "version": "1.0.0",
+  "version": "1.0.1-rc",
   "description": "JavaScript/TypeScript SDK for the Animate 3D REST API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
