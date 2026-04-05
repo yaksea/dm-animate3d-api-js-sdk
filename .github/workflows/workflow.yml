@@ -1,5 +1,6 @@
 # Build and publish to npm when a tag starting with v is pushed (e.g. v1.0.0).
 # Publishing uses npm Trusted Publishing (OIDC); no long-lived NPM_TOKEN in this workflow.
+# The publish step runs npm CLI >=11.5.1 via npx (avoids fragile global npm self-upgrades on the runner).
 # On npmjs.com: package Settings -> Trusted publisher: bind GitHub org/user, repo,
 #   workflow filename (must match this file, e.g. workflow.yml), optional Environment matching the job (e.g. release).
 # For private packages during install only, use a read-only token and set NODE_AUTH_TOKEN on the Install step if needed.
@@ -28,11 +29,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          check-latest: true
           registry-url: 'https://registry.npmjs.org'
-
-      # Trusted Publishing requires npm CLI >= 11.5.1; Node 22 may bundle an older npm.
-      - name: Upgrade npm for Trusted Publishing
-        run: npm install -g npm@^11.5.1
 
       - name: Verify package.json version matches git tag
         run: |
@@ -53,4 +51,4 @@ jobs:
         run: npm test -- --passWithNoTests
 
       - name: Publish to npm
-        run: npm publish
+        run: npx --yes npm@11.5.1 publish
